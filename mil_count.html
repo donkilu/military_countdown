@@ -1,0 +1,216 @@
+<html>
+
+  <head>
+    <title>役期倒數</title>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="Content-Language" value="zh-TW" />
+    <link rel="icon" href="img/camo.ico" type="image/x-icon" />
+    <!-- Bootstrap core CSS & datepicker -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="datepicker/css/datepicker.css" rel="stylesheet" />
+    <!-- Custom styles -->
+    <link href="layout.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header clearfix">
+        <h3 class="text-muted"><img src="img/calendar.png" style="margin-right:10px">役期倒數</img></h3>
+      </div>
+	  
+	  <div class="marketing">
+	    <div class="row">
+			<div class="col-md-2 col-xs-6">入伍日期</div><input type="text" id="enterDate" class="datepicker col-md-3 col-xs-6" placeholder="入伍日期..." name="enterDate" />
+			<div class="col-md-2 col-xs-6">折抵日期</div><input type="number" id="daysSaved" class="col-md-3 col-xs-6" placeholder="折抵日期..." name="daysSaved" />
+			<div class="col-md-2 col-xs-12"><button type="button" id="clearCookie" class="btn btn-default btn-block">重設</button></div>
+		</div>
+		<hr>
+	    <div class="row well">
+            <H3>
+			    <p><label id="todayDate"></label></p>
+				<p><label id="leaveDate"></label></p>
+				<p class="text-center bigchar"><label id="daysToLeave"></label></p>
+			</H3>
+			<div class="progress">
+			    <div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="width:70%">
+				    <span></span>
+                </div>					
+			</div>
+		</div>
+      </div>
+	  
+      <footer class="footer">
+        <p>&copy; Donki Lu 2015</p>
+      </footer>
+    </div>
+  </body>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+  <script src="jquery/jquery-1.11.2.min.js"></script>
+  <script src="bootstrap/js/bootstrap.min.js"></script>
+  <script src="datepicker/js/bootstrap-datepicker.js"></script>
+  <script language=javascript>
+    $('#enterDate').datepicker({
+        format: 'yyyy-mm-dd'
+	  }).on('changeDate', function(ev){
+		document.cookie = "enter_date=" + ev.date.toDateString();
+		updateLeaveDate();
+	});
+	
+    $('#daysSaved').change(function(){
+		document.cookie = "saved_days=" + $('#daysSaved').val();	
+		updateLeaveDate();
+    });
+	
+    $('#clearCookie').click(function(){
+		$('#enterDate').val("");        	
+		$('#daysSaved').val("");        	
+        document.cookie = "enter_date=; saved_days=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+    });
+	
+	function getCookie(cname){
+		var name = cname + "=";
+		var ca = document.cookie.split(';');
+		for(var i=0; i<ca.length; i++) {
+			var c = ca[i];
+			while (c.charAt(0)==' ') c = c.substring(1);
+			if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+		}
+		return "";
+    } 
+	
+	function updateLeaveDate() {    // 更新退伍日期 & 倒數天數 & 進度條
+	    if($('#enterDate').val()){  // if the enter date is given...
+			var today_date = new Date();
+     		var enter_ary = $("#enterDate").val().split('-');
+			var enter_date = new Date( (parseInt(enter_ary[0])), parseInt(enter_ary[1]-1), parseInt(enter_ary[2]) );
+			var rough_leave_date = new Date( (parseInt(enter_ary[0])+1), parseInt(enter_ary[1]-1), parseInt(enter_ary[2]) );
+			var true_leave_date = subtractDate( rough_leave_date, $("#daysSaved").val() );
+		    $('#leaveDate').html("已折抵退伍日為" + true_leave_date.getFullYear() + "年" + (true_leave_date.getMonth()+1) + "月" + true_leave_date.getDate() + "日");
+			var countdown_days = countDateDist(today_date, true_leave_date);
+	        $('#daysToLeave').html('還剩' + countdown_days + '天退伍!');
+			//進度條更新
+			var progress = Math.round( countDateDist(enter_date, today_date) / countDateDist(enter_date, true_leave_date) * 100 );  // 百分比取四捨五入
+			if( progress >= 100 ){
+                progress = 100;  
+			}else if ( progress < 0 ){
+			    progress = 0;
+			}
+			$('.progress-bar').css('width', progress+'%').attr('aria-valuenow', progress);
+			$('.progress-bar > span').text( progress + '% Complete');
+		}
+	}
+		
+	function countDateDist(begin_date, end_date) {
+	    if( begin_date.valueOf() > end_date.valueOf() ) return -1;                // 檢查end是不是在begin後面，不是的話回傳-1 (err值)
+	    var begin_year = begin_date.getFullYear();
+		var end_year = end_date.getFullYear();
+		if( begin_year == end_year ){
+ 		    return ( countFromJan1st(end_date) - countFromJan1st(begin_date) );   // 開始與結束在同一年的狀況
+        }else{                                                                    
+		    var days_counted = countFromDec31(begin_date) + countFromJan1st(end_date);  // 先加入開始與結束的兩年
+            for(var i=end_year-1; i>begin_year; i--){                                   // 中間的每一年，逐年計算
+		        days_counted += daysofYear(i);
+			}
+			return days_counted;
+		}		
+	}
+	
+	function subtractDate(target_date, days) {
+		var after_year  = target_date.getFullYear();
+		var after_month = target_date.getMonth() + 1;
+		var after_date  = target_date.getDate();
+		var days_left = days;
+		while(days_left > 0){
+		    if(after_date > days_left){   // 這個月的日子足夠折完
+			    after_date -= days_left;
+                days_left = 0;
+			}else if(after_month != 1){   // 不夠，退到上一個月月底 (一月要退到去年)
+                days_left -= after_date;                            // 先折掉這個月的日子
+				after_month--;                                      // 設定月份至上個月
+				after_date = daysofMonth(after_year, after_month);  // 設定日期至上個月底
+            }else{                        // 一月底，要退到去年
+                days_left -= after_date;                            // 先折掉這個月的日子
+				after_year--;                                       // 設定年份至去年
+				after_month = 12;                                   // 設定月份至12月
+				after_date = 31;                                    // 設定日期至31日            
+			}			
+		}
+		return new Date(after_year, after_month-1, after_date);
+	}	
+	
+	function countFromJan1st(target_date){
+	    var days_counted = 0;
+		var year  = target_date.getFullYear();
+		var month = target_date.getMonth() + 1;
+		var date  = target_date.getDate();
+	    for(var i=1; i<=month; i++){
+		    if(i == month) days_counted += date;
+			else days_counted += daysofMonth(year, i);
+		}
+		return days_counted;
+	}
+	
+	function countFromDec31(target_date){
+	    var days_counted = 0;
+		var year  = target_date.getFullYear();
+		var month = target_date.getMonth() + 1;
+		var date  = target_date.getDate();
+	    for(var i=12; i>=month; i--){
+		    if(i == month) days_counted += daysofMonth(year, i) - date;
+			else days_counted += daysofMonth(year, i);
+		}
+		return days_counted;
+	}	
+	
+	function daysofMonth(year, month){  // 計算月份的日數
+	    switch(month){
+		    case 1:
+			case 3:
+			case 5:
+			case 7:
+			case 8:
+			case 10:
+			case 12:
+			    return 31;
+				break;
+			case 4:
+			case 6:
+			case 9:
+			case 11:
+			    return 30;
+				break;
+		    case 2:
+			    if( year % 4 != 0 ) return 28;          // 非4的倍數: 正常年
+				else if( year % 100 != 0 ) return 29;   // 4的倍數但非100倍數: 閏年
+				else if( year % 400 == 0 ) return 29;   // 400的倍數: 閏年
+				else return 28;                         // 其他則是正常年
+				break;
+		    default:
+			    return 30;
+		}
+	}
+	
+	function daysofYear(year){  // 計算年份的日數
+		if( year % 4 != 0 ) return 365;          // 非4的倍數: 正常年
+		else if( year % 100 != 0 ) return 366;   // 4的倍數但非100倍數: 閏年
+		else if( year % 400 == 0 ) return 366;   // 400的倍數: 閏年
+		else return 365;                         // 其他則是正常年
+	}
+	
+    $(document).ready(function(){
+  	  var today_date = new Date();
+	  $('#todayDate').html("今日是" + today_date.getFullYear() + "年" + (today_date.getMonth()+1) + "月" + today_date.getDate() + "日");
+  	  if(getCookie('enter_date') != ""){
+  	      var cookie_enter_date = new Date(getCookie('enter_date'));
+		  var date_string = cookie_enter_date.getFullYear() + "-" + (cookie_enter_date.getMonth()+1) + "-" + cookie_enter_date.getDate();
+		  $('#enterDate').val(date_string);
+  	      var cookie_saved_days = getCookie('saved_days');
+		  $('#daysSaved').val(cookie_saved_days);
+		  updateLeaveDate();
+	  }
+	})  
+  </script>
+</html>
