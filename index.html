@@ -36,10 +36,17 @@
 			</div>
 		</div>
 	    <div class="row panel panel-default">
-		    <div class="panel-body">		
-				<div class="col-md-2 col-xs-6 text-center">入伍日期</div><input type="text" id="enterDate" class="datepicker col-md-3 col-xs-6" placeholder="入伍日期..." name="enterDate" />
-				<div class="col-md-2 col-xs-6 text-center">折抵日期</div><input type="number" id="daysSaved" class="col-md-3 col-xs-6" placeholder="折抵日期..." name="daysSaved" />
-				<div class="col-md-2 col-xs-12"><button type="button" id="clearCookie" class="btn btn-default btn-block">重設</button></div>
+		    <div class="panel-body">
+ 			<form role="form">
+				<div class="form-group">
+					<label for="enterDate">入伍日期</label>
+					<input type="text" id="enterDate" class="datepicker form-control" placeholder="入伍日期..." name="enterDate" />
+				</div>
+				<div class="form-group">
+					<label for="enterDate">折抵日數</label>
+					<input type="number" id="daysSaved" class="form-control" placeholder="折抵日數..." name="daysSaved" />
+				</div>
+				<button type="button" id="clearCookie" class="btn btn-default btn-block">重設</button>
 			</div>
 		</div>
 		<br/>
@@ -130,8 +137,17 @@
 	
     $('#clearCookie').click(function(){
 		$('#enterDate').val("");        	
-		$('#daysSaved').val("");        	
-        document.cookie = "serv_type=; enter_date=; saved_days=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+		$('#daysSaved').val("");   
+		$('#chooseServ a').removeClass('active');
+		$('#normServ').addClass('active');     	
+		// clean all cookies
+		var cookies = document.cookie.split(";");
+		for (var i = 0; i < cookies.length; i++) {
+			var cookie = cookies[i];
+			var eqPos = cookie.indexOf("=");
+			var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+			document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+		}
     });
 	
 	function getCookie(cname){
