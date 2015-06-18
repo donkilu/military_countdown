@@ -21,17 +21,21 @@
 	  <div class="marketing">
   	    <div class="row">
 			<div id="chooseServ" class="list-group list-group-horizontal col-md-12 col-xs-12">
-			  <a id="normServ" class="list-group-item col-md-4 col-xs-4 active">
+			  <a id="normServ" class="list-group-item col-md-3 col-xs-3 active">
 				<span class="badge">1年</span>
 				常備役
 			  </a>
-			  <a id="shortServ" class="list-group-item col-md-4 col-xs-4">
+			  <a id="shortServ" class="list-group-item col-md-3 col-xs-3">
 				<span class="badge">4個月</span>
 				軍事訓練役
 			  </a>
-			  <a id="subServ" class="list-group-item col-md-4 col-xs-4">
+			  <a id="subServ" class="list-group-item col-md-3 col-xs-3">
 				<span class="badge">1年15日</span>
 				替代役
+			  </a>
+ 			  <a id="volServ" class="list-group-item col-md-3 col-xs-3">
+				<span class="badge">20年</span>
+				志願役
 			  </a>
 			</div>
 		</div>
@@ -82,21 +86,28 @@
 	$('#normServ').click(function(){
 		$('#chooseServ a').removeClass('active');
 		$(this).addClass('active');
-		document.cookie = "serv_type=" + 0;
+		document.cookie = "serv_type=" + 0 + ";expires=01 Jan 2100 00:00:00 GMT";
 		updateLeaveDate();
     });
 	
 	$('#shortServ').click(function(){
 		$('#chooseServ a').removeClass('active');
 		$(this).addClass('active');
-		document.cookie = "serv_type=" + 1;
+		document.cookie = "serv_type=" + 1 + ";expires=01 Jan 2100 00:00:00 GMT";
 		updateLeaveDate();
     });
 
     $('#subServ').click(function(){
 		$('#chooseServ a').removeClass('active');
 		$(this).addClass('active');
-		document.cookie = "serv_type=" + 2;
+		document.cookie = "serv_type=" + 2 + ";expires=01 Jan 2100 00:00:00 GMT";
+		updateLeaveDate();
+    });
+	
+	$('#volServ').click(function(){
+		$('#chooseServ a').removeClass('active');
+		$(this).addClass('active');
+		document.cookie = "serv_type=" + 3 + ";expires=01 Jan 2100 00:00:00 GMT";
 		updateLeaveDate();
     });
 	
@@ -105,7 +116,7 @@
 	    if(serv_type == ""){
 			$('#chooseServ a').removeClass('active');
 			$('#normServ').addClass('active');
-			document.cookie = "serv_type=" + 0;
+			document.cookie = "serv_type=" + 0 + ";expires=01 Jan 2100 00:00:00 GMT";
 			return 0;
 		}
 		else{
@@ -115,9 +126,12 @@
 			}else if(serv_type == 1){
 				$('#chooseServ a').removeClass('active');
 				$('#shortServ').addClass('active');
-			}else{
+			}else if(serv_type == 2){
 				$('#chooseServ a').removeClass('active');
 				$('#subServ').addClass('active');
+			}else{
+				$('#chooseServ a').removeClass('active');
+				$('#volServ').addClass('active');			
 			}
 			return serv_type;
 		}
@@ -126,12 +140,12 @@
 	$('#enterDate').datepicker({
         format: 'yyyy-mm-dd'
 	  }).on('changeDate', function(ev){
-		document.cookie = "enter_date=" + ev.date.toDateString();
+		document.cookie = "enter_date=" + ev.date.toDateString() + ";expires=01 Jan 2100 00:00:00 GMT";
 		updateLeaveDate();
 	});
 	
     $('#daysSaved').change(function(){
-		document.cookie = "saved_days=" + $('#daysSaved').val();	
+		document.cookie = "saved_days=" + $('#daysSaved').val() + ";expires=01 Jan 2100 00:00:00 GMT";	
 		updateLeaveDate();
     });
 	
@@ -180,9 +194,11 @@
 				   serv_month -= 12;
 			    }
 			   rough_leave_date = new Date( serv_year, serv_month-1, serv_date );			
-			}else{                     // 1年15日替代役
+			}else if(serv_type == 2){  // 1年15日替代役
 			    var one_year_later = new Date( (parseInt(enter_ary[0])+1), parseInt(enter_ary[1]-1), parseInt(enter_ary[2]) );
                 rough_leave_date = addDate(one_year_later, 15);				
+			}else{                     // 20年志願役
+			    rough_leave_date = new Date( (parseInt(enter_ary[0])+20), parseInt(enter_ary[1]-1), parseInt(enter_ary[2]) );
 			}
 			var true_leave_date = subtractDate( rough_leave_date, $("#daysSaved").val() );
 		    $('#leaveDate').html("已折抵退伍日為" + true_leave_date.getFullYear() + "年" + (true_leave_date.getMonth()+1) + "月" + true_leave_date.getDate() + "日");
